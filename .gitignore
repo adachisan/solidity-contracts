@@ -1,0 +1,6 @@
+artifacts/
+.deps/
+*.txt
+*.log
+*.env
+.env*

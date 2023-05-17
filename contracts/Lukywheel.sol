@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
+
 // https://github.com/posipool/lucky-wheel
 
 pragma solidity >= 0.8.0;
@@ -38,7 +39,8 @@ contract Lukywheel is Access {
         Prize[] memory _prizes = prizes;
         Prize memory prize;
         (uint posis, uint tickets, uint vrf) = (0, 0, _VRF());
-        vrf = uint(keccak256(abi.encodePacked(block.timestamp))); //Remix VM
+        //must use the line bellow for Remix VM
+        //vrf = uint(keccak256(abi.encodePacked(block.timestamp)));
         for (uint i = 0; i < _spins;) {
             prize = _selectPrize(_prizes, vrf % 100);
             result[i] = prize.name;

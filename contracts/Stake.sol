@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.0;
 
-import "Access.sol";
+import "contracts/Access.sol";
 
 interface Token {
     function balanceOf(address _account) external view returns (uint);

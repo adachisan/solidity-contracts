@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.0;
 
-import "Token.sol";
+import "contracts/Token.sol";
 
 contract PosipoolTicket is Token {
     constructor() ERC20("PosipoolTicket", "TICKET") Access() { }

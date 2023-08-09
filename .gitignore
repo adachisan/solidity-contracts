@@ -1,6 +1,9 @@
 artifacts/
+node_modules/
+cache/
+.vscode/
 .deps/
+*.env*
 *.txt
 *.log
-*.env
-.env*
+!README.*

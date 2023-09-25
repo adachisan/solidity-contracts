@@ -1,0 +1,6 @@
+alias compile='npx hardhat compile'
+alias clean='npx hardhat clean'
+alias accounts='npx hardhat accounts'
+alias deploy='npx hardhat deploy'
+alias estimate='npx hardhat estimate'
+alias execute='npx hardhat execute'

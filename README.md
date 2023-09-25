@@ -10,3 +10,9 @@ These contracts can be used for different purposes such as automating business p
 
 Having a personal collection of smart contracts can be useful for developers working on projects as it allows them to reuse and improve existing smart contracts for their own needs.
 Additionally, a personal collection can be shared with other developers for collaboration or contribution to open-source projects.
+
+`useful commands:`
+- npx hardhat clean
+- npx hardhat compile
+- npx hardhat deploy --contract --value --params
+- npx hardhat execute --contract --address --method --value --params

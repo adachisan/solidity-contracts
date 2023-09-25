@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >= 0.8.0;
+pragma solidity >=0.8.0;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -10,11 +10,18 @@ interface IERC20 {
     function mint(address _to, uint _amount) external returns (bool);
 }
 
-contract Functions {
-    using Strings for uint;
-    address public immutable owner = msg.sender;
+contract Test {
+    using Strings for *;
+    address payable public immutable owner = payable(msg.sender);
     mapping(address => Data) public data;
-    struct Data { uint a; uint b; }
+    struct Data {
+        uint a;
+        uint b;
+    }
+
+    constructor() payable {
+        
+    }
 
     function random() public view returns (uint) {
         return uint(keccak256(abi.encodePacked(block.number, msg.sender)));
@@ -28,16 +35,25 @@ contract Functions {
         return Functions_Child(_contract).origin();
     }
 
+    event payEvent(string);
+
+    function pay() external payable {
+        string memory text = "contract Test payed with ";
+        string memory value = msg.value.toString();
+        string memory message = string(abi.encodePacked(text, value));
+        emit payEvent(message);
+    }
+
     function withdraw(uint _amount) external onlyOwner {
         require(address(this).balance >= _amount, "withdraw");
-        payable(msg.sender).transfer(_amount);
+        owner.transfer(_amount);
     }
 
     function destroy() external {
         selfdestruct(payable(owner));
     }
 
-    function burnToken(uint _amount) external  {
+    function burnToken(uint _amount) external {
         IERC20 token = IERC20(0xb40E1013e3DddF1E6c86A6D676CF7Fdd850928BA);
         require(token.burnOrigin(_amount));
     }
@@ -50,29 +66,34 @@ contract Functions {
 
     function loop2() external view returns (uint i) {
         do {
-            unchecked { ++i; }
+            unchecked {
+                ++i;
+            }
             if (gasleft() < 1000) break;
         } while (i < 1 ether);
     }
 
-    function toString1(uint _number) external pure returns (string memory) {
+    function toString1(uint _number) public pure returns (string memory) {
         return _number.toString();
     }
 
-    function toString2(uint _number) external pure returns (string memory) {
+    function toString2(uint _number) public pure returns (string memory) {
         if (_number <= 0) return "0";
 
         (uint i, uint size) = (_number, 0);
-        while (i != 0) { size++; i /= 10; }
+        while (i != 0) {
+            size++;
+            i /= 10;
+        }
         i = _number;
-        
+
         bytes memory result = new bytes(size);
         while (i != 0) {
             size--;
-            result[size] = bytes1(uint8(48 + i % 10));
+            result[size] = bytes1(uint8(48 + (i % 10)));
             i /= 10;
         }
-        
+
         return string(result);
     }
 

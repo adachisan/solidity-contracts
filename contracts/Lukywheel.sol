@@ -4,7 +4,7 @@
 
 pragma solidity >= 0.8.0;
 
-import "contracts/Access.sol";
+import "./factory/Access.sol";
 
 interface Ticket {
     function balanceOf(address account) external view returns (uint);

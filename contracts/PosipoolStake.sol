@@ -2,7 +2,7 @@
 
 pragma solidity >=0.8.0;
 
-import "contracts/Stake.sol";
+import "./factory/Stake.sol";
 
 contract PosipoolStake is Stake {
     

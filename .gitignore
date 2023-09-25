@@ -6,9 +6,4 @@ cache/
 *.env*
 *.txt
 *.log
-<<<<<<< HEAD
 !README.*
-.env
-=======
-!README.*
->>>>>>> 3a918a172412748e6fa03b5e887faa03d73d14d2

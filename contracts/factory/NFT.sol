@@ -44,12 +44,12 @@ abstract contract NFT is ERC721Enumerable, Access {
     function _metadata(uint _tokenId) internal view virtual returns (string memory) {
         Data memory data = _tokenById[_tokenId];
         bytes memory json = abi.encodePacked(
-            "{",
+            '{',
                 '"name":"',data.name,'"',
                 ',"description":"',data.description,'"',
                 ',"image":"',_image(_tokenId),'"',
                 ',"external_url":"',data.url,'"',
-            "}"
+            '}'
         );
         return string(abi.encodePacked("data:application/json;base64,", Base64.encode(json)));
     }

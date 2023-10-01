@@ -5,8 +5,8 @@ const { ethers, network, artifacts } = require("hardhat");
 
 /**
  * solution for hardhat.ethers errors on custom networks
- * @see fix: not returning gasPrice from receipt object
- * @see fix: not finding estimateGas method on provider object
+ * - fix: not returning gasPrice from receipt object
+ * - fix: not finding estimateGas method on provider object
  * @param {string} contract
  */
 async function hardhatFix(contract) {
@@ -20,6 +20,7 @@ async function hardhatFix(contract) {
     const provider = new ethers.JsonRpcProvider(network.config["url"]);
     const signer = new ethers.Wallet(network.config.accounts[0], provider);
     const factory = await ethers.getContractFactory(contract, signer);
+
     return { provider, signer, factory };
 }
 
@@ -38,7 +39,7 @@ async function estimate(contract) {
 
     function args(value = "0", params = []) {
         const valueToWei = ethers.parseEther(value || "0");
-        return ({ ...params, value: valueToWei, gasLimit: 3_000_000 });
+        return [...params, { value: valueToWei, gasLimit: 3_000_000 }];
     }
 
     /**
@@ -47,7 +48,7 @@ async function estimate(contract) {
      * @param {Array<String>} [params] (optional) params for constructor
      */
     async function deploy(value = "0", params = []) {
-        const transation = await factory.getDeployTransaction(args(value, params));
+        const transation = await factory.getDeployTransaction(...args(value, params));
         const gasUsed = await provider.estimateGas(transation);
         const fee = ethers.formatEther(gasUsed * gasPrice);
         return { gasUsed, gasPrice, fee }
@@ -62,7 +63,7 @@ async function estimate(contract) {
      */
     async function execute(address, method, value = "0", params = []) {
         const _contract = factory.attach(address);
-        const gasUsed = await _contract[method].estimateGas(args(value, params));
+        const gasUsed = await _contract[method].estimateGas(...args(value, params));
         const fee = ethers.formatEther(gasUsed * gasPrice);
         return { gasUsed, gasPrice, fee }
     }
@@ -85,10 +86,10 @@ async function deploy(contract, value = "0", params = []) {
     console.time("deploy");
 
     const valueToWei = ethers.parseEther(value || "0");
-    const args = ({ ...params, value: valueToWei, gasLimit: 3_000_000 });
+    const args = [...params, { value: valueToWei, gasLimit: 3_000_000 }];
 
     const { factory } = await hardhatFix(contract);
-    const transaction = await factory.deploy(args);
+    const transaction = await factory.deploy(...args);
 
     const receipt = await transaction.deploymentTransaction().wait();
     const { hash, from, gasPrice, contractAddress, gasUsed } = receipt;
@@ -114,52 +115,24 @@ async function execute(contract, address, method, value = "0", params = []) {
     console.time("execute");
 
     const valueToWei = ethers.parseEther(value || "0");
-    const args = ({ ...params, value: valueToWei, gasLimit: 3_000_000 });
+    const args = [...params, { value: valueToWei, gasLimit: 3_000_000 }];
 
     const { factory } = await hardhatFix(contract);
-    const transaction = await factory.attach(address)[method](args);
+    const transaction = await factory.attach(address)[method](...args);
 
-    const isNotATransaction = typeof transaction !== 'object';
-    if (isNotATransaction) return `${transaction}`;
+    const isObject = typeof transaction == 'object';
+    const isTransaction = isObject && 'provider' in transaction;
+    if (!isTransaction) return `${transaction}`;
 
     const { from, gasUsed, gasPrice, hash, logs } = await transaction.wait();;
     const fee = ethers.formatEther(gasUsed * gasPrice);
     const events = logs
         .filter(({ fragment: { type } }) => type === 'event')
-        .map(({ fragment: { name }, args }) => ({ [name]: args }));
+        .map(({ fragment: { name }, args }) => ({ [name]: `${args}` }));
 
     console.timeEnd("execute");
     return { from, gasUsed, gasPrice, fee, hash, events };
 }
-
-
-
-
-async function testTasks() {
-
-    const deployTest = await deploy("Test");
-    const { contractAddress: address } = deployTest;
-    const executeTest1 = await execute("Test", address, "random");
-    const executeTest2 = await execute("Test", address, "createContract");
-    const executeTest3 = await execute("Test", address, "pay", "0.1");
-
-    console.log(deployTest);
-    console.log(executeTest1);
-    console.log(executeTest2);
-    console.log(executeTest3);
-
-    const estimateTest = await estimate("Test");
-    const estimateDeployTest = await estimateTest.deploy();
-    const estimateexecuteTest1 = await estimateTest.execute(address, "random");
-    const estimateexecuteTest2 = await estimateTest.execute(address, "createContract");
-    const estimateexecuteTest3 = await estimateTest.execute(address, "pay", "0.1");
-
-    console.log(estimateDeployTest);
-    console.log(estimateexecuteTest1);
-    console.log(estimateexecuteTest2);
-    console.log(estimateexecuteTest3);
-
-};
 
 
 

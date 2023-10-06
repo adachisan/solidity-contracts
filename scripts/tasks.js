@@ -1,76 +1,54 @@
-const { ethers, network, artifacts } = require("hardhat");
 
 
 
 
-/**
- * solution for hardhat.ethers errors on custom networks
- * - fix: not returning gasPrice from receipt object
- * - fix: not finding estimateGas method on provider object
- * @param {string} contract
- */
-async function hardhatFix(contract) {
-    if (network.name == "hardhat" || !network.name) {
-        const provider = ethers.provider;
-        const signer = await ethers.provider.getSigner();
-        const factory = await ethers.getContractFactory(contract, signer);
-        return { provider, signer, factory };
+/** 
+ * gets and sets contracts address on cache
+ * @param {string} [contract]
+ * @param {string} [address]
+ * @returns {string | object}
+*/
+function cache(contract, address) {
+    const { readFileSync, writeFileSync, existsSync } = require("fs");
+    const { network } = require("hardhat");
+
+    const [file, name] = ["./cache/contracts.json", network.name];
+    const tryParse = (x) => { try { return x(); } catch { return { [name]: {} }; } };
+    const data = tryParse(() => JSON.parse(readFileSync(file, "utf8")));
+
+    if (!!address) {
+        data[name] = { ...data[name], [contract]: address };
+        writeFileSync(file, JSON.stringify(data, null, 4));
     }
 
-    const provider = new ethers.JsonRpcProvider(network.config["url"]);
-    const signer = new ethers.Wallet(network.config.accounts[0], provider);
-    const factory = await ethers.getContractFactory(contract, signer);
-
-    return { provider, signer, factory };
+    return !!contract ? data[name][contract] : data[name];
 }
 
 
 
 
 /**
- * estimates contract's deploy/execution cost
- * @param {String} contract contract's name
+ * @param {any[]} logs 
+ * @returns {{[key: string]: string}[]}
  */
-async function estimate(contract) {
-    console.time("estimate");
-
-    const { provider, factory } = await hardhatFix(contract);
-    const { gasPrice } = await provider.getFeeData();
-
-    function args(value = "0", params = []) {
-        const valueToWei = ethers.parseEther(value || "0");
-        return [...params, { value: valueToWei, gasLimit: 3_000_000 }];
-    }
-
-    /**
-     * estimates contract's deploy cost
-     * @param {String} [value] (optional) value to be paid in ethers
-     * @param {Array<String>} [params] (optional) params for constructor
-     */
-    async function deploy(value = "0", params = []) {
-        const transation = await factory.getDeployTransaction(...args(value, params));
-        const gasUsed = await provider.estimateGas(transation);
-        const fee = ethers.formatEther(gasUsed * gasPrice);
-        return { gasUsed, gasPrice, fee }
-    }
-
-    /**
-     * estimates contract's execution cost
-     * @param {String} [address] contract's address
-     * @param {String} [method] method's name
-     * @param {String} [value] (optional) value to be paid in ethers
-     * @param {Array<String>} [params] (optional) params for method
-     */
-    async function execute(address, method, value = "0", params = []) {
-        const _contract = factory.attach(address);
-        const gasUsed = await _contract[method].estimateGas(...args(value, params));
-        const fee = ethers.formatEther(gasUsed * gasPrice);
-        return { gasUsed, gasPrice, fee }
-    }
-
-    console.timeEnd("estimate");
-    return { deploy, execute }
+function getEvents(logs) {
+    return logs.filter(({ fragment: { type } }) => type === 'event')
+        .map(({ fragment: { name }, args }) => ({ [name]: `${args}` }));
 }
+
+
+
+
+/**
+ * @typedef {Object} TxData
+ * @property {string} from address that executed the transaction
+ * @property {BigInt} gasUsed amount of gas used
+ * @property {BigInt} gasPrice gas price of current network
+ * @property {string} fee cost of the transaction in ethers
+ * @property {string} hash hash of the transaction
+ * @property {string} contractAddress contract's address
+ * @property {object[]} events list of events emitted from contract
+ */
 
 
 
@@ -80,23 +58,27 @@ async function estimate(contract) {
  * @param {String} contract contract's name
  * @param {String} [value] (optional) value to be paid in ethers
  * @param {Array<String>} [params] (optional) params if any for constructor
- * @returns {Promise<{from: String, gasUsed: BigInt, gasPrice: BigInt, fee: String, contractAddress: String, hash: String}>} object of response
+ * @returns {Promise<TxData>}
  */
-async function deploy(contract, value = "0", params = []) {
+async function deploy(contract, value = "0", params = [], gasLimit = 3_000_000) {
+    const { ethers } = require("hardhat");
+
     console.time("deploy");
 
     const valueToWei = ethers.parseEther(value || "0");
-    const args = [...params, { value: valueToWei, gasLimit: 3_000_000 }];
+    const args = [...params, { value: valueToWei, gasLimit }];
 
-    const { factory } = await hardhatFix(contract);
-    const transaction = await factory.deploy(...args);
+    const factory = await ethers.getContractFactory(contract);
+    const transaction = (await factory.deploy(...args)).deploymentTransaction();
 
-    const receipt = await transaction.deploymentTransaction().wait();
-    const { hash, from, gasPrice, contractAddress, gasUsed } = receipt;
+    const { from, gasPrice, hash } = transaction;
+    const { contractAddress, gasUsed, logs } = await transaction.wait();
     const fee = ethers.formatEther(gasUsed * gasPrice);
+    const events = getEvents(logs);
 
     console.timeEnd("deploy");
-    return { from, gasUsed, gasPrice, fee, hash, contractAddress };
+
+    return { from, gasUsed, gasPrice, fee, hash, contractAddress, events };
 }
 
 
@@ -109,32 +91,34 @@ async function deploy(contract, value = "0", params = []) {
  * @param {String} method method's name
  * @param {String} [value] (optional) value to be paid in ethers
  * @param {Array<String>} [params] (optional) params for the method
- * @returns {Promise<String|{from: String, gasUsed: BigInt, gasPrice: BigInt, fee: String,hash: String, events: Array<any>}>} object of response
+ * @returns {Promise<String | TxData>}
  */
-async function execute(contract, address, method, value = "0", params = []) {
+async function execute(contract, address, method, value = "0", params = [], gasLimit = 3_000_000) {
+    const { ethers } = require("hardhat");
+
     console.time("execute");
 
     const valueToWei = ethers.parseEther(value || "0");
-    const args = [...params, { value: valueToWei, gasLimit: 3_000_000 }];
+    const args = [...params, { value: valueToWei, gasLimit }];
 
-    const { factory } = await hardhatFix(contract);
+    const factory = await ethers.getContractFactory(contract);
     const transaction = await factory.attach(address)[method](...args);
 
     const isObject = typeof transaction == 'object';
     const isTransaction = isObject && 'provider' in transaction;
     if (!isTransaction) return `${transaction}`;
 
-    const { from, gasUsed, gasPrice, hash, logs } = await transaction.wait();;
+    const { from, to: contractAddress, gasPrice, hash } = transaction;
+    const { gasUsed, logs } = await transaction.wait();;
     const fee = ethers.formatEther(gasUsed * gasPrice);
-    const events = logs
-        .filter(({ fragment: { type } }) => type === 'event')
-        .map(({ fragment: { name }, args }) => ({ [name]: `${args}` }));
+    const events = getEvents(logs);
 
     console.timeEnd("execute");
-    return { from, gasUsed, gasPrice, fee, hash, events };
+
+    return { from, gasUsed, gasPrice, fee, hash, contractAddress, events };
 }
 
 
 
 
-module.exports = { estimate, deploy, execute };
+module.exports = { cache, deploy, execute };

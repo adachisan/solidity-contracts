@@ -1,18 +1,33 @@
-# Solidity smart contracts
+# Collection of Solidity smart contracts.
 
-`Personal collection of Solidity smart contracts. `
+Solidity is a programming language used for writing smarts contracts on EVM (Ethereum Virtual Machine) compatible blockchains.
+These smart contracts are scripts deployed on blockchain that executes methods when requested.
+This repository includes various types of contracts such as tokens, staking, betting, and more.
 
-Solidity is a programming language used for creating contracts on EVM (Ethereum Virtual Machine) compatible blockchains.
-These smart contracts are self-executing programs that automatically perform functions when requested.
+`commands:`
 
-This repository includes various types of contracts such as token contracts, staking contracts, betting contracts, and more.
-These contracts can be used for different purposes such as automating business processes, creating digital assets, providing decentralized services, and much more.
+```bash
+#init localhost network on windows
+start npx hardhat node 
 
-Having a personal collection of smart contracts can be useful for developers working on projects as it allows them to reuse and improve existing smart contracts for their own needs.
-Additionally, a personal collection can be shared with other developers for collaboration or contribution to open-source projects.
+#init localhost network on mac/linux
+npx hardhat node &
 
-`useful commands:`
-- npx hardhat clean
-- npx hardhat compile
-- npx hardhat deploy --contract --value --params
-- npx hardhat execute --contract --address --method --value --params
+#clear cache and artifacts
+npx hardhat clean
+
+#compile contracts on /contracts dir
+npx hardhat compile
+
+#shows all accounts and balance of current network
+npx hardhat accounts
+
+#defines contact and address of current context
+npx hardhat contract --contract --address
+
+#deploys contract from current context
+npx hardhat deploy --contract --value --params
+
+#execute contract from current context
+npx hardhat execute --contract --method --value --params
+```

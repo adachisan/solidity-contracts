@@ -32,7 +32,7 @@ function cache(contract, address) {
  * @returns {{[key: string]: string}[]}
  */
 function getEvents(logs) {
-    return logs.filter(({ fragment: { type } }) => type === 'event')
+    return logs.filter(({ fragment }) => fragment?.type == 'event')
         .map(({ fragment: { name }, args }) => ({ [name]: `${args}` }));
 }
 

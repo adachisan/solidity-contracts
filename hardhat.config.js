@@ -88,11 +88,23 @@ task("contracts", "gets and sets contracts addresses")
 
 
 task("send", "sends value to address")
-  .addPositionalParam("value", "value in ethers", "0")
-  .addPositionalParam("address", "address to send", "")
+  .addPositionalParam("value", "value in ethers")
+  .addPositionalParam("address", "target address")
   .setAction(async ({ value, address }) => {
     const response = await tasks.send(address, value);
     console.log(response);
+  });
+
+
+
+
+task("balance", "get balance of address in ethers")
+  .addPositionalParam("address", "target address")
+  .setAction(async ({ address }, { ethers }) => {
+    console.log("🤑🤑🤑");
+    const balanceInWei = await ethers.provider.getBalance(address);
+    const balanceInEthers = ethers.formatEther(balanceInWei);
+    console.log(balanceInEthers);
   });
 
 

@@ -21,6 +21,9 @@ contract Lukywheel is Ownable {
     Prize[] public prizes;
     struct Prize { string name; uint posi; uint ticket; uint weight; }
 
+    event Spin(address indexed _sender, string[] _result);
+    event Deposit(address indexed _sender, uint _amount);
+
     constructor(address _tokenAddress) payable Ownable(msg.sender) {
         token = Token(_tokenAddress);
         prizes.push(Prize("LOSE", 0, 0, 32));
@@ -31,8 +34,6 @@ contract Lukywheel is Ownable {
         prizes.push(Prize("6_POSI", 6 ether, 0, 2));
         prizes.push(Prize("8_POSI", 8 ether, 0, 1));
     }
-
-    event Spin(address indexed, string[], uint);
 
     function spin(uint _spins) external payable priceCheck(_spins) {
         string[] memory result = new string[](_spins);
@@ -49,7 +50,7 @@ contract Lukywheel is Ownable {
         }
         require(token.mintTo(msg.sender, tickets), "!mint");
         payable(msg.sender).transfer(posis);
-        emit Spin(msg.sender, result, block.timestamp);
+        emit Spin(msg.sender, result);
     }
 
     function _selectPrize(Prize[] memory _prizes, uint _vrf) private pure returns (Prize memory) {
@@ -69,7 +70,7 @@ contract Lukywheel is Ownable {
     }
 
     //https://docs.posichain.org/developers/dapps-development/posichain-vrf
-    function VRF() public view returns (uint _result) {
+    function VRF() internal view returns (uint _result) {
         uint[1] memory bn = [block.number];
         assembly {
             let memPtr := mload(0x40)
@@ -79,6 +80,11 @@ contract Lukywheel is Ownable {
             _result := mload(memPtr)
         }
         _result = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _result)));
+    }
+
+    function deposit() external payable {
+        require(msg.value > 0, "!value");
+        emit Deposit(msg.sender, msg.value);
     }
 
     function setLock(bool _enabled) external onlyOwner {

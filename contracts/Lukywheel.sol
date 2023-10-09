@@ -21,7 +21,7 @@ contract Lukywheel is Ownable {
     Prize[] public prizes;
     struct Prize { string name; uint posi; uint ticket; uint weight; }
 
-    constructor(address _tokenAddress) Ownable(msg.sender) {
+    constructor(address _tokenAddress) payable Ownable(msg.sender) {
         token = Token(_tokenAddress);
         prizes.push(Prize("LOSE", 0, 0, 32));
         prizes.push(Prize("0.5_POSI", 0.5 ether, 0, 32));

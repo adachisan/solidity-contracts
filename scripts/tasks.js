@@ -42,12 +42,12 @@ function getEvents(logs) {
 /**
  * @typedef {Object} TxData
  * @property {string} from address that executed the transaction
+ * @property {string} to contract/target address
  * @property {BigInt} gasUsed amount of gas used
  * @property {BigInt} gasPrice gas price of current network
  * @property {string} fee cost of the transaction in ethers
  * @property {string} hash hash of the transaction
- * @property {string} contractAddress contract's address
- * @property {object[]} events list of events emitted from contract
+ * @property {object[]} [events] list of events emitted from contract
  */
 
 
@@ -56,14 +56,14 @@ function getEvents(logs) {
 /**
  * deploy's a contract on blockchain
  * @param {String} contract contract's name
- * @param {String} [value] (optional) value to be paid in ethers
+ * @param {String} [value] (optional) value to be sent in ethers
  * @param {Array<String>} [params] (optional) params if any for constructor
  * @returns {Promise<TxData>}
  */
 async function deploy(contract, value = "0", params = [], gasLimit = 3_000_000) {
     const { ethers } = require("hardhat");
 
-    console.time("deploy");
+    console.time("🚀🚀🚀");
 
     const valueToWei = ethers.parseEther(value || "0");
     const args = [...params, { value: valueToWei, gasLimit }];
@@ -72,13 +72,13 @@ async function deploy(contract, value = "0", params = [], gasLimit = 3_000_000) 
     const transaction = (await factory.deploy(...args)).deploymentTransaction();
 
     const { from, gasPrice, hash } = transaction;
-    const { contractAddress, gasUsed, logs } = await transaction.wait();
+    const { contractAddress: to, gasUsed, logs } = await transaction.wait();
     const fee = ethers.formatEther(gasUsed * gasPrice);
     const events = getEvents(logs);
 
-    console.timeEnd("deploy");
+    console.timeEnd("🚀🚀🚀");
 
-    return { from, gasUsed, gasPrice, fee, hash, contractAddress, events };
+    return { from, to, gasUsed, gasPrice, fee, hash, events };
 }
 
 
@@ -89,14 +89,14 @@ async function deploy(contract, value = "0", params = [], gasLimit = 3_000_000) 
  * @param {String} contract contract's name
  * @param {String} address contract's address
  * @param {String} method method's name
- * @param {String} [value] (optional) value to be paid in ethers
+ * @param {String} [value] (optional) value to be sent in ethers
  * @param {Array<String>} [params] (optional) params for the method
  * @returns {Promise<String | TxData>}
  */
 async function execute(contract, address, method, value = "0", params = [], gasLimit = 3_000_000) {
     const { ethers } = require("hardhat");
 
-    console.time("execute");
+    console.time("📲📲📲");
 
     const valueToWei = ethers.parseEther(value || "0");
     const args = [...params, { value: valueToWei, gasLimit }];
@@ -108,17 +108,42 @@ async function execute(contract, address, method, value = "0", params = [], gasL
     const isTransaction = isObject && 'provider' in transaction;
     if (!isTransaction) return `${transaction}`;
 
-    const { from, to: contractAddress, gasPrice, hash } = transaction;
+    const { from, to, gasPrice, hash } = transaction;
     const { gasUsed, logs } = await transaction.wait();;
     const fee = ethers.formatEther(gasUsed * gasPrice);
     const events = getEvents(logs);
 
-    console.timeEnd("execute");
+    console.timeEnd("📲📲📲");
 
-    return { from, gasUsed, gasPrice, fee, hash, contractAddress, events };
+    return { from, to, gasUsed, gasPrice, fee, hash, events };
+}
+
+
+
+/**
+ * runs a contract's method/function
+ * @param {String} address contract's address
+ * @param {String} value value to be sent in ethers
+ * @returns {Promise<TxData>}
+ */
+async function send(address, value) {
+    const { ethers } = require("hardhat");
+
+    console.time("💸💸💸");
+
+    const valueToWei = ethers.parseEther(value || "0");
+    const singer = await ethers.provider.getSigner();
+    const transaction = await singer.sendTransaction({ to: address, value: valueToWei });
+    const { from, to, gasPrice, hash } = transaction;
+    const { gasUsed } = await transaction.wait();
+    const fee = ethers.formatEther(gasUsed * gasPrice);
+
+    console.timeEnd("💸💸💸");
+
+    return { from, to, gasUsed, gasPrice, fee, hash }
 }
 
 
 
 
-module.exports = { cache, deploy, execute };
+module.exports = { cache, deploy, execute, send };

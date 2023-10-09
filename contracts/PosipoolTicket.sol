@@ -6,7 +6,7 @@ import "./lib/Token.sol";
 
 contract PosipoolTicket is Token {
     
-    constructor() ERC20("PosipoolTicket", "TICKET") Access() { }
+    constructor() ERC20("PosipoolTicket", "TICKET") { }
 
     function approve(address spender, uint amount) public virtual override returns (bool) {
         revert("Cannot use this function!");

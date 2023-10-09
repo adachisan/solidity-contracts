@@ -87,15 +87,25 @@ task("contracts", "gets and sets contracts addresses")
 
 
 
+task("send", "sends value to address")
+  .addPositionalParam("value", "value in ethers", "0")
+  .addPositionalParam("address", "address to send", "")
+  .setAction(async ({ value, address }) => {
+    const response = await tasks.send(address, value);
+    console.log(response);
+  });
+
+
+
+
 task("deploy", "deploys contract")
   .addPositionalParam("contract", "contract's name")
   .addOptionalPositionalParam("value", "value to send", "0")
   .addOptionalPositionalParam("params", "constructor params", "")
   .setAction(async ({ contract, value, params }, hre) => {
-    console.log("🚀🚀🚀");
     const paramsArray = !params ? [] : params.split(',');
     const response = await tasks.deploy(contract, value, paramsArray);
-    tasks.cache(contract, response.contractAddress);
+    tasks.cache(contract, response.to);
     console.log(response);
   });
 
@@ -108,7 +118,6 @@ task("execute", "execute contract's method")
   .addOptionalPositionalParam("value", "value to send", "0")
   .addOptionalPositionalParam("params", "constructor params", "")
   .setAction(async ({ contract, method, value, params }, hre) => {
-    console.log("☎️☎️☎️");
     const paramsArray = !params ? [] : params.split(',');
     const address = tasks.cache(contract);
     if (!address) throw Error("contract address not found");

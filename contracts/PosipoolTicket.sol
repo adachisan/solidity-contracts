@@ -2,9 +2,10 @@
 
 pragma solidity >=0.8.0;
 
-import "./factory/Token.sol";
+import "./lib/Token.sol";
 
 contract PosipoolTicket is Token {
+    
     constructor() ERC20("PosipoolTicket", "TICKET") Access() { }
 
     function approve(address spender, uint amount) public virtual override returns (bool) {
@@ -19,11 +20,4 @@ contract PosipoolTicket is Token {
         revert("Cannot use this function!");
     }
 
-    function increaseAllowance(address spender, uint addedValue) public virtual override returns (bool) {
-        revert("Cannot use this function!");
-    }
-
-    function decreaseAllowance(address spender, uint subtractedValue) public virtual override returns (bool) {
-        revert("Cannot use this function!");
-    }
 }

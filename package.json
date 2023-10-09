@@ -1,7 +1,7 @@
 {
   "name": "solidity-contracts",
   "type": "commonjs",
-  "description": "`Personal collection of Solidity smart contracts. `",
+  "description": "collection of Solidity smart contracts",
   "version": "1.0.0",
   "main": "hardhat.config.js",
   "author": "adachisan",
@@ -12,6 +12,6 @@
     "hardhat": "^2.17.1"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.9.3"
+    "@openzeppelin/contracts": "^5.0.0"
   }
 }

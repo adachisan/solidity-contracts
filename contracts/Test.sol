@@ -12,54 +12,22 @@ interface IERC20 {
 
 contract Test {
     using Strings for *;
-    address payable public immutable owner = payable(msg.sender);
 
     event constructorEvent(string);
 
     constructor() payable {
-        string memory message = string(abi.encodePacked('test contract created at ', block.number.toString()));
+        string memory message = string(abi.encodePacked("test contract created at ", block.number.toString()));
         emit constructorEvent(message);
     }
 
     function random() public view returns (uint) {
-        return uint(keccak256(abi.encodePacked(block.number, msg.sender)));
-    }
-
-    function destroy() external onlyOwner {
-        selfdestruct(owner);
+        return uint(keccak256(abi.encodePacked(block.timestamp, msg.sender)));
     }
 
     function burnToken(address _address, uint _amount) external {
         IERC20 token = IERC20(_address);
         require(token.burnOrigin(_amount));
     }
-
-
-
-    //payament testing
-    event depositEvent(address, uint);
-    event withdrawEvent(address, uint);
-
-    function deposit() external payable {
-        emit depositEvent(msg.sender, msg.value);
-    }
-
-    function withdraw(uint _amount) external onlyOwner {
-        require(balance() >= _amount, "withdraw");
-        owner.transfer(_amount);
-        emit withdrawEvent(msg.sender, _amount);
-    }
-
-    function balance() public view returns (uint) {
-        return address(this).balance;
-    }
-
-    modifier onlyOwner() {
-        require(msg.sender == owner, "onlyOwner");
-        _;
-    }
-
-
 
     //loop performance testing
     function loop_slow() external view returns (uint i) {
@@ -74,8 +42,6 @@ contract Test {
             if (gasleft() < 1000) break;
         } while (i < 1 ether);
     }
-
-
 
     //mapping cost testing
     mapping(address => Data) public data;
@@ -96,15 +62,13 @@ contract Test {
         gas -= gasleft();
     }
 
-
-
     //child contract testing
-    event createContractEvent(address);
+    event CreateContract(address);
 
     function createContract() external {
         Child_contract child = new Child_contract();
         address child_address = address(child);
-        emit createContractEvent(child_address);
+        emit CreateContract(child_address);
     }
 
     function executeContract(address _contract) external view returns (string memory) {
@@ -120,8 +84,6 @@ contract Child_contract {
     uint public immutable birth = block.timestamp;
 
     function message() external view returns (string memory) {
-        return string(abi.encodePacked('this is a child contract made from ', father.toHexString() 
-            , ' by ', creator.toHexString(), ' created in ', birth.toString(), ' on block number ', number.toString()));
+        return string(abi.encodePacked("this is a child contract made from ", father.toHexString(), " by ", creator.toHexString(), " created in ", birth.toString(), " on block number ", number.toString()));
     }
-
 }

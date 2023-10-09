@@ -2,9 +2,10 @@
 
 pragma solidity >=0.8.0;
 
-import "./factory/Stake.sol";
+import "./lib/Stake.sol";
+import "./lib/Access.sol";
 
-contract PosipoolStake is Stake {
+contract PosipoolStake is Stake, Access {
     
     struct Delegators { address wallet; uint amount; }
     event UpdateDelegators(address indexed, uint);
@@ -22,23 +23,20 @@ contract PosipoolStake is Stake {
         }
     }
 
-    function updateDelegators(Delegators[] calldata _account) accessLevel(1) external returns (bool) {
+    function updateDelegators(Delegators[] calldata _account) access(Level.OWNER) external {
         for (uint i = 0; i < _account.length;) {
             _saveRewards(_account[i].wallet);
             _delegator[_account[i].wallet].amount = _account[i].amount;
             unchecked { ++i; }
         }
         emit UpdateDelegators(msg.sender, _account.length);
-        return true;
     }
 
-    function deposit(uint _amount) external virtual override returns (bool) {
+    function deposit(uint _amount) external virtual override {
         revert("Cannot use this function!");
-        return false;
     }
 
-    function tokenWithdraw(uint _amount) external virtual override returns (bool) {
+    function tokenWithdraw(uint _amount) external virtual override {
         revert("Cannot use this function!");
-        return false;
     }
 }

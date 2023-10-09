@@ -2,27 +2,27 @@
 
 // https://github.com/posipool/lucky-wheel
 
-pragma solidity >= 0.8.0;
+pragma solidity >=0.8.20;
 
-import "./factory/Access.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-interface Ticket {
+interface Token {
     function balanceOf(address account) external view returns (uint);
-    function mint(address _to, uint _amount) external returns (bool);
+    function mintTo(address _to, uint _amount) external returns (bool);
     function burnOrigin(uint _amount) external returns (bool);
 }
 
-contract Lukywheel is Access {
+contract Lukywheel is Ownable {
     uint public constant spinPrice = 1 ether;
     uint public constant maxSpins = 30;
-    Ticket ticket;
+    Token public immutable token;
 
     bool public locked;
     Prize[] public prizes;
     struct Prize { string name; uint posi; uint ticket; uint weight; }
 
-    constructor(address _tokenAddress) Access() {
-        ticket = Ticket(_tokenAddress);
+    constructor(address _tokenAddress) Ownable(msg.sender) {
+        token = Token(_tokenAddress);
         prizes.push(Prize("LOSE", 0, 0, 32));
         prizes.push(Prize("0.5_POSI", 0.5 ether, 0, 32));
         prizes.push(Prize("1_TICKET", 0, 1 ether, 20));
@@ -34,14 +34,12 @@ contract Lukywheel is Access {
 
     event Spin(address indexed, string[], uint);
 
-    function spin(uint _spins) accessLevel(0) priceCheck(_spins) external payable {
+    function spin(uint _spins) external payable priceCheck(_spins) {
         string[] memory result = new string[](_spins);
         Prize[] memory _prizes = prizes;
         Prize memory prize;
-        (uint posis, uint tickets, uint vrf) = (0, 0, _VRF());
-        //must use the line bellow for Remix VM
-        //vrf = uint(keccak256(abi.encodePacked(block.timestamp)));
-        for (uint i = 0; i < _spins;) {
+        (uint posis, uint tickets, uint vrf) = (0, 0, VRF());
+        for (uint i = 0; i < _spins; ) {
             prize = _selectPrize(_prizes, vrf % 100);
             result[i] = prize.name;
             posis += prize.posi;
@@ -49,14 +47,14 @@ contract Lukywheel is Access {
             vrf /= 100;
             unchecked { ++i; }
         }
-        require(ticket.mint(msg.sender, tickets), "!mint");
+        require(token.mintTo(msg.sender, tickets), "!mint");
         payable(msg.sender).transfer(posis);
         emit Spin(msg.sender, result, block.timestamp);
     }
 
-    function _selectPrize(Prize[] memory _prizes, uint _vrf) internal pure returns (Prize memory) {
+    function _selectPrize(Prize[] memory _prizes, uint _vrf) private pure returns (Prize memory) {
         (uint sum, uint len) = (0, _prizes.length);
-        for (uint i = 0; i < len;) {
+        for (uint i = 0; i < len; ) {
             sum += _prizes[i].weight;
             if (_vrf < sum) return _prizes[i];
             unchecked { ++i; }
@@ -65,13 +63,13 @@ contract Lukywheel is Access {
     }
 
     function priceOf(address _player, uint _spins) public view returns (uint) {
-        uint tickets = ticket.balanceOf(_player);
+        uint tickets = token.balanceOf(_player);
         uint totalPrice = _spins * spinPrice;
         return tickets > totalPrice ? 0 : totalPrice - tickets;
     }
 
     //https://docs.posichain.org/developers/dapps-development/posichain-vrf
-    function _VRF() internal view returns (uint _result) {
+    function VRF() public view returns (uint _result) {
         uint[1] memory bn = [block.number];
         assembly {
             let memPtr := mload(0x40)
@@ -80,15 +78,15 @@ contract Lukywheel is Access {
             }
             _result := mload(memPtr)
         }
-        _result = uint(keccak256(abi.encodePacked(msg.sender, _result)));
+        _result = uint(keccak256(abi.encodePacked(block.timestamp, msg.sender, _result)));
     }
 
-    function setLock(bool _enabled) accessLevel(1) external {
+    function setLock(bool _enabled) external onlyOwner {
         locked = _enabled;
     }
 
-    function destroy() accessLevel(1) external {
-        selfdestruct(payable(_owner));
+    function destroy() external onlyOwner {
+        selfdestruct(payable(owner()));
     }
 
     modifier priceCheck(uint _spins) {
@@ -96,7 +94,7 @@ contract Lukywheel is Access {
         require(!locked, "locked");
         require(_spins > 0 && _spins <= maxSpins, "!spins");
         require(msg.value == price, "!price");
-        require(ticket.burnOrigin(_spins * spinPrice - price));
+        require(token.burnOrigin(_spins * spinPrice - price));
         _;
     }
 }

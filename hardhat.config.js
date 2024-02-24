@@ -17,7 +17,7 @@ module.exports = {
       },
     },
   },
-  defaultNetwork: "localhost",
+  defaultNetwork: "hardhat",
   networks: {
     hardhat: {
       gasPrice: 100000000000,

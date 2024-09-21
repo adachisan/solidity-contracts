@@ -45,3 +45,11 @@ npx hardhat deploy --contract --value --params
 ```bash
 npx hardhat execute --contract --method --value --params
 ```
+
+
+`Fixes:`
+
+- Cannot find module @nomicfoundation\edr-win32-x64-msvc\edr.win32-x64-msvc.node
+```bash
+curl -L -s -O https://aka.ms/vs/17/release/vc_redist.x64.exe && vc_redist.x64.exe
+```

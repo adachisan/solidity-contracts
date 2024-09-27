@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >=0.8.0;
+pragma solidity >=0.8.27;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/utils/Strings.sol";
@@ -10,7 +10,7 @@ interface IERC20 {
     function mint(address _to, uint _amount) external returns (bool);
 }
 
-contract Test {
+contract Example {
     using Strings for *;
 
     event constructorEvent(string);
@@ -47,19 +47,12 @@ contract Test {
     mapping(address => Data) public data;
     struct Data { uint a; uint b; }
 
-    function mapping_slow() external view returns (uint gas) {
-        gas = gasleft();
-        uint a = data[msg.sender].a;
-        uint b = data[msg.sender].b;
-        gas -= gasleft();
+    function set(uint _a, uint _b) external {
+        data[msg.sender] = Data(_a, _b);
     }
 
-    function mapping_fast() external view returns (uint gas) {
-        gas = gasleft();
-        Data memory _data = data[msg.sender];
-        uint a = _data.a;
-        uint b = _data.b;
-        gas -= gasleft();
+    function get() external view returns (Data memory) {
+        return data[msg.sender];
     }
 
     //child contract testing

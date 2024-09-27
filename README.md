@@ -8,12 +8,7 @@ This repository includes various types of contracts such as tokens, staking, bet
 
 - init localhost network on windows
 ```bash
-start npx hardhat node 
-```
-
-- init localhost network on mac/linux
-```bash
-npx hardhat node &
+npx hardhat node 
 ```
 
 - clear cache and artifacts
@@ -45,7 +40,6 @@ npx hardhat deploy --contract --value --params
 ```bash
 npx hardhat execute --contract --method --value --params
 ```
-
 
 `Fixes:`
 

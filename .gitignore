@@ -7,4 +7,3 @@ cache/
 *.txt
 *.log
 !README.*
-package-lock.json

@@ -1,6 +1,6 @@
 require("@nomicfoundation/hardhat-toolbox");
 const { task, subtask } = require("hardhat/config");
-const tasks = require('./scripts/tasks.js');
+const assert = require("node:assert");
 
 const networks = process.env.PRIVATE_KEY && {
     bnb: {
@@ -32,12 +32,13 @@ const networks = process.env.PRIVATE_KEY && {
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
     solidity: {
-        version: "0.8.21",
+        version: "0.8.27",
         settings: {
             optimizer: {
                 enabled: true,
                 runs: 200,
             },
+            viaIR: true,
         },
     },
     defaultNetwork: "hardhat",
@@ -66,48 +67,47 @@ task("contracts", "gets and sets contracts addresses")
     .addOptionalPositionalParam("address", "contract's address", "")
     .setAction(async ({ contract, address }, { artifacts }) => {
         console.log("📁📁📁");
-        !!contract && (await artifacts.artifactExists(contract));
-        const response = tasks.cache(contract, address);
-        console.log(response);
-    });
-
-task("send", "sends value to address")
-    .addPositionalParam("value", "value in ethers")
-    .addPositionalParam("address", "target address")
-    .setAction(async ({ value, address }) => {
-        const response = await tasks.send(address, value);
+        contract && (await artifacts.artifactExists(contract));
+        const { cache } = require('./scripts/tasks.js');
+        const response = cache(contract, address);
         console.log(response);
     });
 
 task("balance", "get balance of address in ethers")
-    .addPositionalParam("address", "target address")
+    .addOptionalPositionalParam("address", "target address", "")
     .setAction(async ({ address }, { ethers }) => {
         console.log("🤑🤑🤑");
-        const balanceInWei = await ethers.provider.getBalance(address);
+        const myAddress = (await ethers.provider.getSigner()).address;
+        const balanceInWei = await ethers.provider.getBalance(address ? address : myAddress);
         const balanceInEthers = ethers.formatEther(balanceInWei);
         console.log(balanceInEthers);
     });
 
 task("deploy", "deploys contract")
     .addPositionalParam("contract", "contract's name")
-    .addOptionalPositionalParam("value", "value to send", "0")
     .addOptionalPositionalParam("params", "constructor params", "")
-    .setAction(async ({ contract, value, params }, hre) => {
+    .addOptionalPositionalParam("value", "value to send", "0")
+    .setAction(async ({ contract, params, value }, hre) => {
+        const { deploy } = require('./scripts/tasks.js');
         const paramsArray = !params ? [] : params.split(',');
-        const response = await tasks.deploy(contract, value, paramsArray);
-        tasks.cache(contract, response.to);
-        console.log(response);
+        console.log(await deploy(contract, value, paramsArray));
     });
 
 task("execute", "execute contract's method")
     .addPositionalParam("contract", "contract's name")
     .addPositionalParam("method", "contract's method")
-    .addOptionalPositionalParam("value", "value to send", "0")
     .addOptionalPositionalParam("params", "constructor params", "")
-    .setAction(async ({ contract, method, value, params }, hre) => {
+    .addOptionalPositionalParam("value", "value to send", "0")
+    .setAction(async ({ contract, method, params, value }, hre) => {
+        const { execute } = require('./scripts/tasks.js');
         const paramsArray = !params ? [] : params.split(',');
-        const address = tasks.cache(contract);
-        if (!address) throw Error("contract address not found");
-        const response = await tasks.execute(contract, address, method, value, paramsArray);
-        console.log(response);
+        console.log(await execute(contract, method, value, paramsArray));
+    });
+
+task("transfer", "transfer value to address")
+    .addPositionalParam("address", "target address")
+    .addPositionalParam("value", "value in ethers")
+    .setAction(async ({ address, value }) => {
+        const { transfer } = require('./scripts/tasks.js');
+        console.log(await transfer(address, value));
     });

@@ -69,7 +69,7 @@ contract Lukywheel is Ownable {
         return tickets > totalPrice ? 0 : totalPrice - tickets;
     }
 
-    //https://docs.posichain.org/developers/dapps-development/posichain-vrf
+    //https://docs.harmony.one/home/developers/tools/harmony-vrf
     function VRF() internal view returns (uint _result) {
         uint[1] memory bn = [block.number];
         assembly {

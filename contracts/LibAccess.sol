@@ -48,7 +48,7 @@ abstract contract Access {
         bool isOwner = msg.sender == owner;
         bool isMember = hasAccess(msg.sender);
         bool onlyOwner = _level == Level.OWNER;
-        bool canAccess = isOwner || !onlyOwner && isMember;
+        bool canAccess = noOwners || isOwner || !onlyOwner && isMember;
         require(canAccess, "!access");
         _;
     }

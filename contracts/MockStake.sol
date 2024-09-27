@@ -2,10 +2,10 @@
 
 pragma solidity >=0.8.0;
 
-import "./lib/Stake.sol";
-import "./lib/Access.sol";
+import "./LibStake.sol";
+import "./LibAccess.sol";
 
-contract PosipoolStake is Stake, Access {
+contract MockStake is Stake, Access {
     
     struct Delegators { address wallet; uint amount; }
     event UpdateDelegators(address indexed, uint);

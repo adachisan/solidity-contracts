@@ -26,7 +26,6 @@ describe("Raffle", function () {
             const result = await contract.createGame.staticCall(...args);
             assert(typeof result == 'bigint', "result is not bigint");
             assert(result > i, `result should be > ${i}`);
-            console.log(result);
             const transaction = /** @type {TransactionResponse} */(await contract.createGame(...args));
             const receipt = await transaction.wait();
             assert(receipt, "failed to get receipt");

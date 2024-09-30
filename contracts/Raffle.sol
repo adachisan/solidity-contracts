@@ -67,10 +67,10 @@ contract Raffle {
 		return string(json);
 	}
 
-	function getPlayerJson(address addr) external view returns (string memory) {
-		Player memory player = playerByAddress[addr];
-		return "not implemented yet";
-	}
+	// function getPlayerJson(address addr) external view returns (string memory) {
+	// 	Player memory player = playerByAddress[addr];
+	// 	return "not implemented yet";
+	// }
 
 	function prizes(uint max) external view returns (uint[] memory _result) {
 		uint vrf = VRF();

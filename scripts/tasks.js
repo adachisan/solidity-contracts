@@ -1,6 +1,6 @@
 const assert = require("node:assert");
 const { readFileSync, writeFileSync, existsSync } = require("fs");
-const { EasyEthers } = require("./EasyEthers.js");
+const { EasyEthers } = require("../scripts/easyEthers.js");
 const hre = require("hardhat");
 
 /** @type {(contract: string, address?: string) => string | object } */
@@ -15,16 +15,18 @@ function cache(contract, address) {
     return contract ? data[name][contract] : data[name];
 }
 
-async function deploy(contract, value, params) {
+async function deploy(contract, params, value) {
     const instance = await EasyEthers.fromHardhat(hre, contract);
-    return instance.deploy(value, params);
+    const result = await instance.deploy(params, value);
+    cache(contract, result.to || undefined);
+    return result;
 }
 
-async function execute(contract, method, value, params) {
+async function execute(contract, method, params, value) {
     const address = cache(contract);
     assert(address, "contract address not found");
     const instance = await EasyEthers.fromHardhat(hre, contract, address);
-    return instance.execute(method, value, params);
+    return instance.execute(method, params, value);
 }
 
 async function transfer(address, value) {

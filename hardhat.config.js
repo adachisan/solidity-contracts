@@ -1,8 +1,19 @@
 require("@nomicfoundation/hardhat-toolbox");
 const { task, subtask } = require("hardhat/config");
-const assert = require("node:assert");
+const { spawnSync } = require("node:child_process");
 
-const networks = process.env.PRIVATE_KEY && {
+const networks = {
+    hardhat: {
+        gasPrice: 100000000000,
+    },
+    localhost: {
+        url: "http://127.0.0.1:8545/",
+        gasPrice: 100000000000,
+        timeout: 60000,
+    },
+};
+
+const privateNetworks = process.env.PRIVATE_KEY && {
     bnb: {
         url: "https://bsc-dataseed.bnbchain.org/",
         chainId: 56,
@@ -41,17 +52,10 @@ module.exports = {
             viaIR: true,
         },
     },
-    defaultNetwork: "hardhat",
+    defaultNetwork: spawnSync("curl", ["--max-time", "0.1", networks.localhost.url]).status ? "hardhat" : "localhost",
     networks: {
-        hardhat: {
-            gasPrice: 100000000000,
-        },
-        localhost: {
-            url: "http://127.0.0.1:8545/",
-            gasPrice: 100000000000,
-            timeout: 60000,
-        },
         ...networks,
+        ...privateNetworks,
     }
 };
 
@@ -90,7 +94,7 @@ task("deploy", "deploys contract")
     .setAction(async ({ contract, params, value }, hre) => {
         const { deploy } = require('./scripts/tasks.js');
         const paramsArray = !params ? [] : params.split(',');
-        console.log(await deploy(contract, value, paramsArray));
+        console.log(await deploy(contract, paramsArray, value));
     });
 
 task("execute", "execute contract's method")
@@ -101,7 +105,7 @@ task("execute", "execute contract's method")
     .setAction(async ({ contract, method, params, value }, hre) => {
         const { execute } = require('./scripts/tasks.js');
         const paramsArray = !params ? [] : params.split(',');
-        console.log(await execute(contract, method, value, paramsArray));
+        console.log(await execute(contract, method, paramsArray, value));
     });
 
 task("transfer", "transfer value to address")

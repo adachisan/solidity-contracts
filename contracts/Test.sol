@@ -87,17 +87,16 @@ contract Test {
 				'"message":"',user.message,'"', 
 			"}"
 		);
-        return string(abi.encodePacked("data:application/json,", encodeURI(string(data))));
+        return string(abi.encodePacked("data:application/json,", encodeURI(data)));
     }
 
-    function encodeURI(string memory _text) public pure returns (string memory) {
-        bytes memory text = bytes(_text);
-        bytes memory result = new bytes(text.length * 3);
+    function encodeURI(bytes memory _text) public pure returns (string memory) {
+        bytes memory result = new bytes(_text.length * 3);
         bytes memory seed = "0123456789ABCDEF";
         // bytes memory allowed = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz_-.!~*'()";
         uint size = 0;
-        for (uint i = 0; i < text.length; i++) {
-            bytes1 char = text[i];
+        for (uint i = 0; i < _text.length; i++) {
+            bytes1 char = _text[i];
             if ((char >= '0' && char <= '9') 
             || (char >= 'A' && char <= 'Z') 
             || (char >= 'a' && char <= 'z') 

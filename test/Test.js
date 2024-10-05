@@ -1,13 +1,13 @@
 const hardhat = require("hardhat");
 const assert = require("node:assert");
-const { EasyEthers } = require("../scripts/easyEthers.js");
+const { Ethers } = require("../utils/Ethers.js");
 
 describe("Test", function () {
-    let contract = /** @type {EasyEthers | null} */(null);
+    let contract = /** @type {Ethers | null} */(null);
     it("deploy", async function () {
-        contract = await EasyEthers.fromHardhat(hardhat, "Test");
-        const result = await contract.deploy();
-        assert(result.to, "failed to deploy");
+        contract = await Ethers.fromHardhat(hardhat, "Test");
+        const deploy = await contract.deploy();
+        assert(deploy.to, "failed to deploy");
     })
     it("random", async function () {
         assert(contract, "contract not deployed");
@@ -19,9 +19,9 @@ describe("Test", function () {
     it("mapping", async function () {
         assert(contract, "contract not deployed");
         const set = await contract.execute("set", ["hello world"], "12.3456");
-        assert(set.value ?? "" == EasyEthers.parseEther("12.3456").toString(), "failed to get mapping");
+        assert(set.value ?? "" == Ethers.parseEther("12.3456").toString(), "failed to get mapping");
         const [value, time, message] = (await contract.execute("get")).result;
-        assert(value == EasyEthers.parseEther("12.3456"), "failed to get value");
+        assert(value == Ethers.parseEther("12.3456"), "failed to get value");
         assert(typeof time == 'bigint', "failed to get time");
         assert(message == "hello world", "failed to get message");
         const json = (await contract.execute("json")).result;
@@ -32,17 +32,14 @@ describe("Test", function () {
         assert(encoded == `data:application/json,${encodeURIComponent(json)}`, "failed to get encoded");
         const log = await contract.execute("log");
         assert(log, "failed to get log");
-
-        // console.dir(set, { depth: null });
-        // console.dir(log, { depth: null });
     })
     it("child", async function () {
         assert(contract, "contract not deployed");
-        const result = await contract.execute("create");
-        assert(result, "failed to get child");
-
-        // console.dir(result);
-        // console.dir(await contract.execute("json"));
-        // console.dir(await contract.execute("random"));
+        const create = await contract.execute("create");
+        const event = (create.events ?? {})["CreateEvent"];
+        assert(create.result, "failed to get result");
+        assert(event == create.result, "result and event not match");
+        const execute = await contract.execute("execute", [create.result]);
+        assert(execute.result, "failed to get result");
     })
 })

@@ -1,8 +1,10 @@
 require("@nomicfoundation/hardhat-toolbox");
 const { task, subtask } = require("hardhat/config");
 const { spawnSync } = require("node:child_process");
+const { readFileSync, writeFileSync, existsSync } = require("fs");
+const { Ethers } = require("./utils/Ethers.js");
 
-const networks = {
+const localNetworks = {
     hardhat: {
         gasPrice: 100000000000,
     },
@@ -13,7 +15,7 @@ const networks = {
     },
 };
 
-const privateNetworks = process.env.PRIVATE_KEY && {
+const publicNetworks = process.env.PRIVATE_KEY && {
     bnb: {
         url: "https://bsc-dataseed.bnbchain.org/",
         chainId: 56,
@@ -40,6 +42,11 @@ const privateNetworks = process.env.PRIVATE_KEY && {
     },
 };
 
+function isLocalHostAvailable() {
+    const { url } = localNetworks.localhost;
+    return spawnSync("curl", ["--max-time", "0.1", url]).status === 0;
+}
+
 /** @type import('hardhat/config').HardhatUserConfig */
 module.exports = {
     solidity: {
@@ -52,12 +59,19 @@ module.exports = {
             viaIR: true,
         },
     },
-    defaultNetwork: spawnSync("curl", ["--max-time", "0.1", networks.localhost.url]).status ? "hardhat" : "localhost",
+    defaultNetwork: isLocalHostAvailable() ? "localhost" : "hardhat",
     networks: {
-        ...networks,
-        ...privateNetworks,
+        ...localNetworks,
+        ...publicNetworks,
     }
 };
+
+/** @type {{ data: { [network: string]: { [contract: string]: string | undefined } | undefined } }} */
+const cache = (() => {
+    const file = "./cache/contracts.json";
+    if (!existsSync(file)) return { data: {} };
+    return { data: JSON.parse(readFileSync(file, "utf8")) };
+})();
 
 task("accounts", "shows list of accounts", async (_, { ethers }) => {
     console.log("📖📖📖");
@@ -69,22 +83,19 @@ task("accounts", "shows list of accounts", async (_, { ethers }) => {
 task("contracts", "gets and sets contracts addresses")
     .addOptionalPositionalParam("contract", "contract's name", "")
     .addOptionalPositionalParam("address", "contract's address", "")
-    .setAction(async ({ contract, address }, { artifacts }) => {
-        console.log("📁📁📁");
+    .setAction(async ({ contract, address }, { artifacts, network: { name } }) => {
         contract && (await artifacts.artifactExists(contract));
-        const { cache } = require('./scripts/tasks.js');
-        const response = cache(contract, address);
-        console.log(response);
+        if (contract && address)
+            (cache.data[name] ??= {})[contract] = address;
+        console.log((cache.data[name] ?? {})[contract] || cache.data[name]);
     });
 
 task("balance", "get balance of address in ethers")
     .addOptionalPositionalParam("address", "target address", "")
     .setAction(async ({ address }, { ethers }) => {
-        console.log("🤑🤑🤑");
         const myAddress = (await ethers.provider.getSigner()).address;
         const balanceInWei = await ethers.provider.getBalance(address ? address : myAddress);
-        const balanceInEthers = ethers.formatEther(balanceInWei);
-        console.log(balanceInEthers);
+        console.log(ethers.formatEther(balanceInWei));
     });
 
 task("deploy", "deploys contract")
@@ -92,9 +103,11 @@ task("deploy", "deploys contract")
     .addOptionalPositionalParam("params", "constructor params", "")
     .addOptionalPositionalParam("value", "value to send", "0")
     .setAction(async ({ contract, params, value }, hre) => {
-        const { deploy } = require('./scripts/tasks.js');
         const paramsArray = !params ? [] : params.split(',');
-        console.log(await deploy(contract, paramsArray, value));
+        const instance = await Ethers.fromHardhat(hre, contract);
+        const result = await instance.deploy(paramsArray, value);
+        (cache.data[hre.network.name] ??= {})[contract] = result.to ?? "";
+        console.log(result);
     });
 
 task("execute", "execute contract's method")
@@ -103,15 +116,20 @@ task("execute", "execute contract's method")
     .addOptionalPositionalParam("params", "constructor params", "")
     .addOptionalPositionalParam("value", "value to send", "0")
     .setAction(async ({ contract, method, params, value }, hre) => {
-        const { execute } = require('./scripts/tasks.js');
         const paramsArray = !params ? [] : params.split(',');
-        console.log(await execute(contract, method, paramsArray, value));
+        const address = (cache.data[hre.network.name] ?? {})[contract];
+        const instance = await Ethers.fromHardhat(hre, contract, address);
+        console.log(await instance.execute(method, paramsArray, value));
     });
 
 task("transfer", "transfer value to address")
     .addPositionalParam("address", "target address")
     .addPositionalParam("value", "value in ethers")
-    .setAction(async ({ address, value }) => {
-        const { transfer } = require('./scripts/tasks.js');
-        console.log(await transfer(address, value));
+    .setAction(async ({ address, value }, hre) => {
+        const instance = await Ethers.fromHardhat(hre);
+        console.log(await instance.transfer(address, value));
     });
+
+process.on("exit", () => {
+    cache.data && writeFileSync("./cache/contracts.json", JSON.stringify(cache.data, null, 4));
+})

@@ -1,9 +1,8 @@
-artifacts/
 node_modules/
+artifacts/
 cache/
-.vscode/
-.deps/
 *.env*
 *.txt
 *.log
-!README.*
+*.sh
+*.bat

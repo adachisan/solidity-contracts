@@ -1,16 +1,13 @@
 {
     "name": "solidity-contracts",
-    "type": "commonjs",
     "description": "collection of Solidity smart contracts",
-    "version": "1.0.0",
     "main": "hardhat.config.js",
     "author": "adachisan",
-    "license": "ISC",
     "devDependencies": {
         "@nomicfoundation/hardhat-toolbox": "^5.0.0",
-        "hardhat": "^2.22.11"
+        "hardhat": "^2.22.12"
     },
     "dependencies": {
-        "@openzeppelin/contracts": "^5.0.0"
+        "@openzeppelin/contracts": "^5.0.2"
     }
 }

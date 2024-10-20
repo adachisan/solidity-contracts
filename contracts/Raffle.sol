@@ -41,26 +41,30 @@ contract Raffle {
 	}
 
 	mapping(address => Player) private playerByAddress;
-	mapping(uint => Game) private gameByIndex;
+	mapping(uint => Game) private gameById;
 
 	function createGame(string memory _description, uint _size, uint _price, uint _endTime) external payable returns (uint) { 
 		require(msg.value >= MIN_PRIZE, "Low prize");
         require(_size <= MAX_TICKETS, "Too many tickets");
-		gameByIndex[GAMES_COUNT++] = Game(payable(msg.sender), msg.value, 0, block.timestamp, _endTime, _price, -1, _description, new address[](_size));
+        uint gameDuration = _endTime + block.timestamp; 
+		gameById[++GAMES_COUNT] = Game(payable(msg.sender), msg.value, 0, block.timestamp, gameDuration, _price, -1, _description, new address[](_size));
 		return GAMES_COUNT;
 	}
 
-	function getGameJson(uint index) external view returns (string memory) {
-		Game memory data = gameByIndex[index];
+	function getGameJson(uint _id) external view returns (string memory) {
+		Game memory data = gameById[_id];
 		bytes memory json = abi.encodePacked(
 			"{", 
-				'"index":"',index.toString(),'",',
+				'"id":"',_id.toString(),'",',
+                '"creator":"',data.creator.toHexString(),'",',
+                '"prize":"',data.prize.toString(),'",',
 				'"balance":"',data.balance.toString(),'",', 
 				'"startTime":"',data.startTime.toString(),'",', 
-				'"endTime":"',data.endTime.toString(),'",', 
-				'"winnerIndex":"',data.winnerIndex.toStringSigned(),'",', 
+				'"endTime":"',data.endTime.toString(),'",',
+                '"price":"',data.price.toString(),'",',
+				'"winnerIndex":"',data.winnerIndex.toStringSigned(),'",',
+                '"description":"',data.description,'"',
 				// '"indexBook":"',data.indexBook,'",', 
-				'"description":"',data.description,'"', 
 			"}"
 		);
 		// return string(abi.encodePacked("data:application/json;base64,", Base64.encode(json)));

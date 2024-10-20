@@ -36,7 +36,8 @@ describe("Test", function () {
     it("child", async function () {
         assert(contract, "contract not deployed");
         const create = await contract.execute("create");
-        const event = (create.events ?? {})["CreateEvent"];
+        // const event = (create.events ?? {})["CreateEvent"];
+        const event = create.events?.CreateEvent;
         assert(create.result, "failed to get result");
         assert(event == create.result, "result and event not match");
         const execute = await contract.execute("execute", [create.result]);

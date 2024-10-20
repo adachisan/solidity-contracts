@@ -3,7 +3,6 @@ const assert = (condition, message) => condition || (() => { throw new Error(mes
 
 export class Ethers {
     /** @import { Signer, Provider, ContractFactory, BaseContract } from "ethers" */
-    /** @import * as Hardhat from "hardhat" */
     /** @typedef {{network: string, from?: string, to?: string | null, value?: bigint, gasUsed?: bigint, gasPrice?: bigint, fee?: bigint, hash?: string, result?: any, events?: Object<string, any>}} TxData*/
     /** @type {ContractFactory | BaseContract | undefined} */ contract;
     /** @type {Signer | Provider} */ signer;
@@ -15,7 +14,7 @@ export class Ethers {
         this.contract = contract;
     }
 
-    /** @type {(hardhat: Hardhat, contractName?: string, contractAddress?: string) => Promise<Ethers>} */
+    /** @type {(hardhat: import("hardhat"), contractName?: string, contractAddress?: string) => Promise<Ethers>} */
     static async fromHardhat({ ethers }, contractName, contractAddress) {
         const instance = new Ethers(await ethers.provider.getSigner());
         if (contractName) {

@@ -3,6 +3,9 @@
     "description": "collection of Solidity smart contracts",
     "main": "hardhat.config.js",
     "author": "adachisan",
+    "scripts": {
+        "test": "npx hardhat compile && npx hardhat test"
+    },
     "devDependencies": {
         "@nomicfoundation/hardhat-toolbox": "^5.0.0",
         "hardhat": "^2.22.12"
